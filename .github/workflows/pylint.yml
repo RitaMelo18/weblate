@@ -1,0 +1,35 @@
+# Copyright © Michal Čihař <michal@weblate.org>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: pylint check
+
+on:
+  push:
+    branches-ignore:
+    - deepsource-fix-**
+    - renovate/**
+    - weblate
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pylint:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: astral-sh/setup-uv@v3
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      run: uv pip install --system $(sed -n 's/.*"\(pylint==\([^"]*\)\)".*/\1/p' pyproject.toml)
+    - name: Add pylint annotator
+      uses: pr-annotators/pylint-pr-annotator@v0.0.1
+
+    - name: Run pylint
+      run: pylint weblate/

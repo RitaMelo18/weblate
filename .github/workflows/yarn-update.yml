@@ -1,0 +1,53 @@
+# Copyright © Michal Čihař <michal@weblate.org>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+# This file is maintained in https://github.com/WeblateOrg/meta/
+name: yarn update
+
+on:
+  push:
+    branches:
+    - renovate/**
+    - main
+    paths:
+    - .github/workflows/yarn-update.yml
+    - scripts/yarn-update
+    - scripts/yarn/*
+    - client/*
+
+permissions:
+  contents: read
+
+jobs:
+  yarn-update:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+    - uses: actions/checkout@v4
+    - run: ./scripts/yarn-update
+    - run: |
+        if [ -d client ] ; then
+          cd client
+          yarn install --check-files
+          yarn build
+          cd ..
+        fi
+    - name: Update branch
+      if: github.ref != 'refs/heads/main'
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: 'chore(js): update vendored libraries'
+    - name: Create Pull Request
+      if: github.ref == 'refs/heads/main'
+      uses: peter-evans/create-pull-request@v7
+      with:
+        branch: create-pull-request/yarn-update
+        title: 'chore(js): update vendored libraries'
+        commit-message: 'chore(js): update vendored libraries'
+        labels: |
+          dependencies
+          automerge
